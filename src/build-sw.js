@@ -1,16 +1,7 @@
 const path = require('path')
 const webpack = require('webpack')
 
-module.exports = async ({ silent, targetDir, swSrc, swDest }) => {
-  const webpackConfig = {
-    mode: process.env.NODE_ENV,
-    entry: swSrc,
-    output: {
-      path: targetDir,
-      filename: swDest,
-    },
-  }
-
+module.exports = async ({ webpackConfig, silent }) => {
   return new Promise((resolve, reject) => {
     webpack(webpackConfig, (err, stats) => {
       if (err) {

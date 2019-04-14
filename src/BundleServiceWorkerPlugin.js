@@ -3,8 +3,8 @@ const buildSW = require('./build-sw')
 const ID = 'vue-cli:bundle-service-worker-plugin'
 
 module.exports = class BundleServiceWorkerPlugin {
-  constructor({ buildOptions }) {
-    this.buildOptions = buildOptions
+  constructor({ webpackConfig }) {
+    this.webpackConfig = webpackConfig
   }
 
   apply(compiler) {
@@ -14,7 +14,7 @@ module.exports = class BundleServiceWorkerPlugin {
         return
       }
 
-      await buildSW(this.buildOptions)
+      await buildSW({ webpackConfig: this.webpackConfig })
     })
   }
 }
