@@ -2,7 +2,7 @@ const buildSW = require('./build-sw')
 
 const ID = 'vue-cli:bundle-service-worker-plugin'
 
-module.exports = class GenerateIconsPlugin {
+module.exports = class BundleServiceWorkerPlugin {
   constructor({ buildOptions }) {
     this.buildOptions = buildOptions
   }
