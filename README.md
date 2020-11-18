@@ -6,45 +6,52 @@ Requires the `@vue/pwa` plugin to be installed and configured using `workboxPlug
 
 ## Installation
 ```
-vue add bundle-service-worker
+npx @vue/cli add bundle-service-worker
 ```
 
 ```javascript
 // vue.config.js
+
 module.exports = {
-  // required
-  pwa: {
-    workboxPluginMode: 'InjectManifest',
-    workboxOptions: {
-      swSrc: 'src/service-worker.js'
-    }
-  },
 
-  // optional
-  pluginOptions: {
-    'vue-cli-plugin-bundle-service-worker': {
-      // simple (https://cli.vuejs.org/guide/webpack.html#chaining-advanced)
-      configureWebpack: {
-        plugins: [
-          new MyAwesomeWebpackPlugin()
-        ]
-      },
+// You must configure the @vue/pwa plugin.
 
-      // chaining (https://cli.vuejs.org/guide/webpack.html#chaining-advanced)
-      chainWebpack: config => {
-        config
-          .plugin('define')
-          .tap(([definitions]) => {
-            // environment variables recognised by Vue CLI will automatically be
-            // included (e.g. NODE_ENV, BASE_URL and VUE_APP_*), but all other
-            // must be explicitly set here
-            definitions['process.env.MY_VAR'] = JSON.stringify(process.env.MY_VAR)
-            return [definitions]
-          })
-      }
+    pwa: {
+        workboxPluginMode: "InjectManifest",
+        workboxOptions: {
+            swSrc: "src/service-worker.js"
+        }
     },
-  },
-}
+
+    pluginOptions: {
+
+// However, this configuration is optional.
+
+        "vue-cli-plugin-bundle-service-worker": {
+
+// You can further configure Webpack by merging and/or chaining.
+
+            configureWebpack: {
+                plugins: [
+                    new MyAwesomeWebpackPlugin()
+                ]
+            },
+            chainWebpack(config) {
+                config.plugin("define").tap(function ([definitions]) {
+
+// Environment variables recognised by Vue CLI will automatically be included
+// (e.g. NODE_ENV, BASE_URL and VUE_APP_*), but all others must be explicitly
+// set here.
+
+                    definitions["process.env.MY_VAR"] = JSON.stringify(
+                        process.env.MY_VAR
+                    );
+                    return [definitions];
+                });
+            }
+        }
+    }
+};
 ```
 
 In this case, `src/service-worker.js` will be built by webpack, then the manifest & workbox libs will be injected.
