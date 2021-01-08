@@ -1,115 +1,125 @@
-const path = require('path')
-const buildSW = require('./src/build-sw')
-const BundleServiceWorkerPlugin = require('./src/BundleServiceWorkerPlugin')
-const Config = require('webpack-chain')
-const { merge } = require('webpack-merge')
-const PLUGIN_NAME = require('./package.json').name
-const DefinePlugin = require('webpack/lib/DefinePlugin')
-const resolveClientEnv = require('@vue/cli-service/lib/util/resolveClientEnv')
+/*jslint node */
 
-module.exports = (api, options) => {
-  const { pwa, outputDir, pluginOptions } = options
+const path = require("path");
+const build_SW = require("./src/build-sw.js");
+const BundleServiceWorkerPlugin = require("./src/BundleServiceWorkerPlugin.js");
+const Config = require("webpack-chain");
+const {merge} = require("webpack-merge");
+const PLUGIN_NAME = require("./package.json").name;
+const DefinePlugin = require("webpack/lib/DefinePlugin");
+const resolve_client_env = require(
+    "@vue/cli-service/lib/util/resolveClientEnv"
+);
 
-  if (!pwa || !pwa.workboxOptions) {
-    throw new Error('pwa.workboxOptions is missing')
-  }
-
-  if (pwa.workboxPluginMode !== 'InjectManifest') {
-    throw new Error('Only pwa.workboxPluginMode "InjectManifest" is supported')
-  }
-
-  // defer to pwa plugin's config
-  const swSrc = api.resolve(pwa.workboxOptions.swSrc)
-
-  // default to filename of swSrc, ala workbox plugin
-  const swDest = pwa.workboxOptions.swDest || path.basename(swSrc)
-  const targetDir = api.resolve(outputDir)
-
-  // configure webpack
-  const chainableConfig = new Config()
-  let swConfig = null
-
-  chainableConfig
-    .mode(process.env.NODE_ENV)
-    .entry('index')
-      .add(swSrc)
-      .end()
-    .output
-      .path(targetDir)
-      .filename(swDest)
-      .end()
-    .plugin('define')
-      .use(DefinePlugin, [
-        resolveClientEnv(options),
-      ])
-
-  swConfig = chainableConfig.toConfig()
-
-  // apply user modifications to webpack config
-  if (pluginOptions && pluginOptions[PLUGIN_NAME]) {
-    const { configureWebpack, chainWebpack } = pluginOptions[PLUGIN_NAME]
-
-    if (chainWebpack) {
-      chainWebpack(chainableConfig)
-
-      swConfig = chainableConfig.toConfig()
+module.exports = function (api, options) {
+    const {pwa, outputDir, pluginOptions} = options;
+    if (!pwa || !pwa.workboxOptions) {
+        throw new Error("pwa.workboxOptions is missing");
+    }
+    if (pwa.workboxPluginMode !== "InjectManifest") {
+        throw new Error(
+            "Only pwa.workboxPluginMode \"InjectManifest\" is supported"
+        );
     }
 
-    if (configureWebpack) {
-      if (typeof configureWebpack === 'function') {
-        // function with optional return value
-        const res = configureWebpack(swConfig)
+// Defer to the PWA plugin's config.
 
-        if (res) {
-          swConfig = merge(swConfig, res)
+    const sw_src = api.resolve(pwa.workboxOptions.swSrc);
+
+// Default to the filename of swSrc, ala workbox plugin.
+
+    const sw_dest = pwa.workboxOptions.swDest || path.basename(sw_src);
+    const target_dir = api.resolve(outputDir);
+
+// Configure webpack.
+
+    const chainable_config = new Config();
+    let sw_config = null;
+    chainable_config.mode(
+        process.env.NODE_ENV
+    ).entry(
+        "index"
+    ).add(
+        sw_src
+    ).end(
+    ).output.path(
+        target_dir
+    ).filename(
+        sw_dest
+    ).end(
+    ).plugin(
+        "define"
+    ).use(DefinePlugin, [resolve_client_env(options)]);
+    sw_config = chainable_config.toConfig();
+
+// Apply user modifications to the webpack config.
+
+    if (pluginOptions && pluginOptions[PLUGIN_NAME]) {
+        const {configureWebpack, chainWebpack} = pluginOptions[PLUGIN_NAME];
+        if (chainWebpack) {
+            chainWebpack(chainable_config);
+            sw_config = chainable_config.toConfig();
         }
-      } else {
-        // merge literal values
-        swConfig = merge(swConfig, configureWebpack)
-      }
-    }
-  }
-
-  api.registerCommand('build:sw', {
-    description: 'Builds service worker',
-    usage: 'vue-cli-service build:sw',
-  }, async (args) => {
-    await buildSW(Object.assign({}, args, { webpackConfig: swConfig }))
-  })
-
-  api.chainWebpack(webpackConfig => {
-    const target = process.env.VUE_CLI_BUILD_TARGET
-    if (target && target !== 'app') {
-      return
+        if (configureWebpack) {
+            if (typeof configureWebpack === "function") {
+                const res = configureWebpack(sw_config);
+                if (res) {
+                    sw_config = merge(sw_config, res);
+                }
+            } else {
+                sw_config = merge(sw_config, configureWebpack);
+            }
+        }
     }
 
-    webpackConfig
-      .when(process.env.NODE_ENV === 'production', config => {
-        config
-          .plugin('bundle-service-worker')
-          .use(BundleServiceWorkerPlugin, [{ webpackConfig: swConfig }])
-          .before('workbox')
+    api.registerCommand(
+        "build:sw",
+        {
+            description: "Builds service worker",
+            usage: "vue-cli-service build:sw"
+        },
+        function (args) {
+            return build_SW(
+                Object.assign({}, args, {webpackConfig: sw_config})
+            );
+        }
+    );
 
-        config
-          .plugin('workbox')
-          // use init instead of tap, as it seems the args are not available
-          // for tap when this is called
-          .init((Plugin, [options]) => {
-            // Inject manifest into built service worker (modify in place)
-            options.swSrc = path.resolve(targetDir, swDest)
+    api.chainWebpack(function (webpack_config) {
+        const target = process.env.VUE_CLI_BUILD_TARGET;
+        if (target && target !== "app") {
+            return;
+        }
+        webpack_config.when(
+            process.env.NODE_ENV === "production",
+            function (config) {
+                config.plugin(
+                    "bundle-service-worker"
+                ).use(BundleServiceWorkerPlugin, [
+                    {webpackConfig: sw_config}
+                ]).before(
+                    "workbox"
+                );
+                config.plugin(
+                    "workbox"
+                ).init(
 
-            return new Plugin(options)
-          })
-          // .tap(args => {
-          //   // Inject manifest into built service worker (modify in place)
-          //   args[0].swSrc = path.resolve(targetDir, swDest)
+// Use .init instead of .tap, as it seems the args are not available for tap
+// when this is called.
 
-          //   return args
-          // })
-      })
-  })
-}
+                    function (Plugin, [options]) {
+
+// Inject manifest into the built service worker.
+
+                        options.swSrc = path.resolve(target_dir, sw_dest);
+                        return new Plugin(options);
+                    }
+                );
+            }
+        );
+    });
+};
 
 module.exports.defaultModes = {
-  'build:sw': 'production'
-}
+    "build:sw": "production"
+};

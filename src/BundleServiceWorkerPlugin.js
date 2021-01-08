@@ -1,20 +1,22 @@
-const buildSW = require('./build-sw')
+/*jslint node */
 
-const ID = 'vue-cli:bundle-service-worker-plugin'
+const build_SW = require("./build-sw");
 
-module.exports = class BundleServiceWorkerPlugin {
-  constructor({ webpackConfig }) {
-    this.webpackConfig = webpackConfig
-  }
+module.exports = function BundleServiceWorkerPlugin({webpackConfig}) {
+    return {
+        apply(compiler) {
+            compiler.hooks.emit.tapPromise(
+                "vue-cli:bundle-service-worker-plugin",
+                function () {
+                    if (process.env.VUE_CLI_MODERN_BUILD) {
 
-  apply(compiler) {
-    compiler.hooks.emit.tapPromise(ID, async (compilation) => {
-      if (process.env.VUE_CLI_MODERN_BUILD) {
-        // avoid running twice (already run after the legacy build)
-        return
-      }
+// Avoid building the service worker twice.
 
-      await buildSW({ webpackConfig: this.webpackConfig })
-    })
-  }
-}
+                        return;
+                    }
+                    return build_SW({webpackConfig});
+                }
+            );
+        }
+    };
+};
