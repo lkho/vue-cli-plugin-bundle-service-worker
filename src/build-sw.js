@@ -1,15 +1,11 @@
 const path = require('path')
 const webpack = require('webpack')
 
-module.exports = async ({ webpackConfig, silent }) => {
-  return new Promise((resolve, reject) => {
-    webpack(webpackConfig, (err, stats) => {
+module.exports = function ({ webpackConfig, silent }) {
+  return new Promise(function (resolve, reject) {
+    return webpack(webpackConfig, function (err, stats) {
       if (err) {
         return reject(err)
-      }
-
-      if (stats.hasErrors()) {
-        return reject(`Service worker build failed with errors.`)
       }
 
       if (!silent) {
@@ -19,7 +15,11 @@ module.exports = async ({ webpackConfig, silent }) => {
         }))
       }
 
-      resolve()
+      return (
+        stats.hasErrors()
+        ? reject('Service worker build failed with errors.')
+        : resolve()
+      )
     })
   })
 }
