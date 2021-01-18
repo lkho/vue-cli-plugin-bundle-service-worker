@@ -93,6 +93,8 @@ module.exports = function (api, options) {
         webpack_config.when(
             process.env.NODE_ENV === "production",
             function (config) {
+// freeze the config chain at this point, just before adding our plugin.
+                sw_config = Object.assign(config.toConfig(), sw_config);
                 config.plugin(
                     "bundle-service-worker"
                 ).use(BundleServiceWorkerPlugin, [
